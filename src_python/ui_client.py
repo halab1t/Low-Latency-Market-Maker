@@ -1,4 +1,5 @@
 import socket
+import time
 import json
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -13,18 +14,43 @@ ask_series = deque(maxlen=5000)
 my_bid_series = deque(maxlen=5000)
 my_ask_series = deque(maxlen=5000)
 
-def data_listener():
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.connect((HOST, PORT))
-        buffer = ""
-        while True:
-            data = s.recv(4096).decode()
-            if not data:
-                break
-            buffer += data
-            while "\n" in buffer:
-                line, buffer = buffer.split("\n", 1)
-                yield json.loads(line)
+#def data_listener():
+ #   with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+  #      s.connect((HOST, PORT))
+   #     buffer = ""
+    #    while True:
+     #       data = s.recv(4096).decode()
+      #      if not data:
+       #         break
+        #    buffer += data
+         #   while "\n" in buffer:
+          #      line, buffer = buffer.split("\n", 1)
+           #     yield json.loads(line)
+
+
+def data_listener(retries=5, delay=1):
+    for attempt in range(retries):
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.connect((HOST, PORT))
+                print(f"Connected to {HOST}:{PORT}")
+                
+                buffer = ""
+                while True:
+                    data = s.recv(4096).decode()
+                    if not data:
+                        break
+                    buffer += data
+                    while "\n" in buffer:
+                        line, buffer = buffer.split("\n", 1)
+                        yield json.loads(line)
+            break  # Exit the retry loop if successful
+        except ConnectionRefusedError:
+            print(f"Connection refused, retrying ({attempt + 1}/{retries})...")
+            time.sleep(delay)
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            break
 
 # Matplotlib setup
 fig, (ax_pnl, ax_book) = plt.subplots(2, 1, figsize=(10, 7))

@@ -11,7 +11,16 @@ echo "----------------------------------------"
 # source venv/bin/activate
 
 # Run the main Python script
-python3 src_python/main.py
+echo "[RUN]  Starting market-making engine..."
+python3 src_python/main2.py & ENGINE_PID=$!
+
+sleep 1
+
+echo "[RUN]  Starting UI dashboard..."
+python3 src_python/ui_client.py
+
+echo "[RUN]  Stopping engine ..."
+kill $ENGINE_PID
 
 echo "----------------------------------------"
 echo "Demo complete."
